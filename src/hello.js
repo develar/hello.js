@@ -265,13 +265,14 @@ hello.utils.extend(hello, {
 		// Append scopes from a previous session.
 		// This helps keep app credentials constant,
 		// Avoiding having to keep tabs on what scopes are authorized
-		if (session && 'scope' in session && session.scope instanceof String) {
+		if (session && 'scope' in session && typeof session.scope === "string") {
 			scope += ',' + session.scope;
 		}
 
 		// Save in the State
 		// Convert to a string because IE, has a problem moving Arrays between windows
-		p.qs.state.scope = utils.unique(scope.split(/[,\s]+/)).join(',');
+    var pQsStateScopeArray = utils.unique(scope.split(/[,\s]+/));
+    p.qs.state.scope = pQsStateScopeArray.join(',');
 
 		// Map replace each scope with the providers default scopes
 		p.qs.scope = scope.replace(/[^,\s]+/ig, function(m) {
@@ -303,7 +304,7 @@ hello.utils.extend(hello, {
 
 			if (session && 'access_token' in session && session.access_token && 'expires' in session && session.expires > ((new Date()).getTime() / 1e3)) {
 				// What is different about the scopes in the session vs the scopes in the new login?
-				var diff = utils.diff(session.scope || [], p.qs.state.scope || []);
+        var diff = utils.diff(session.scope || [], pQsStateScopeArray);
 				if (diff.length === 0) {
 
 					// OK trigger the callback
