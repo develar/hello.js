@@ -301,12 +301,10 @@ hello.utils.extend(hello, {
 
 		// Is the user already signed in with the appropriate scopes, valid access_token?
 		if (opts.force === false) {
-
-			if (session && 'access_token' in session && session.access_token && 'expires' in session && session.expires > ((new Date()).getTime() / 1e3)) {
+			if (session && 'access_token' in session && session.access_token && 'expires' in session && session.expires > (Date.now() / 1000)) {
 				// What is different about the scopes in the session vs the scopes in the new login?
         var diff = utils.diff(session.scope || [], pQsStateScopeArray);
 				if (diff.length === 0) {
-
 					// OK trigger the callback
 					promise.fulfill({
 						unchanged: true,
@@ -1352,14 +1350,11 @@ hello.utils.extend(hello.utils, {
 
 			// Access_token?
 			if (('access_token' in p && p.access_token) && p.network) {
-
-				if (!p.expires_in || parseInt(p.expires_in, 10) === 0) {
-					// If p.expires_in is unset, set to 0
-					p.expires_in = 0;
-				}
-
-				p.expires_in = parseInt(p.expires_in, 10);
-				p.expires = ((new Date()).getTime() / 1e3) + (p.expires_in || (60 * 60 * 24 * 365));
+        // github token never expires
+        // If p.expires_in is unset, set to 0
+        var expiresIn = p.network === "github" ? null : p.expires_in;
+        var parsedExpiresIn = expiresIn == null ? 0 : parseInt(expiresIn, 10);
+				p.expires = (Date.now() / 1000) + (parsedExpiresIn === 0 ? (60 * 60 * 24 * 365) : parsedExpiresIn);
 
 				// Lets use the "state" to assign it to one of our networks
 				authCallback(p, window, parent);
@@ -1504,7 +1499,7 @@ hello.utils.responseHandler(window, window.opener || window.parent);
 
 	(function self() {
 
-		var CURRENT_TIME = ((new Date()).getTime() / 1e3);
+		var CURRENT_TIME = (Date.now() / 1000);
 		var emit = function(eventName) {
 			hello.emit('auth.' + eventName, {
 				network: name,
@@ -1831,7 +1826,7 @@ hello.api = function() {
 			// Does self request have a corresponding formatter
 			if (o.wrap && ((p.path in o.wrap) || ('default' in o.wrap))) {
 				var wrap = (p.path in o.wrap ? p.path : 'default');
-				var time = (new Date()).getTime();
+				var time = Date.now();
 
 				// FORMAT RESPONSE
 				var b = o.wrap[wrap](r, headers, p);
