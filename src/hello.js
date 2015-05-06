@@ -4,7 +4,7 @@
  * HelloJS is a client side Javascript SDK for making OAuth2 logins and subsequent REST calls.
  *
  * @author Andrew Dodson
- * @company Knarly
+ * @website https://adodson.com/hello.js/
  *
  * @copyright Andrew Dodson, 2012 - 2015
  * @license MIT: You are free to use and modify this code for any use, on the condition that this copyright notice remains.
@@ -20,10 +20,7 @@ hello.utils = {
 	extend: function(r /*, a[, b[, ...]] */) {
 
 		// Get the arguments as an array but ommit the initial item
-		var args = Array.prototype.slice.call(arguments, 1);
-
-		for (var i = 0; i < args.length; i++) {
-			var a = args[i];
+		Array.prototype.slice.call(arguments, 1).forEach(function(a) {
 			if (r instanceof Object && a instanceof Object && r !== a) {
 				for (var x in a) {
 					r[x] = hello.utils.extend(r[x], a[x]);
@@ -32,7 +29,7 @@ hello.utils = {
 			else {
 				r = a;
 			}
-		}
+		});
 
 		return r;
 	}
@@ -69,16 +66,6 @@ hello.utils.extend(hello, {
 		// Ths could be problematic if the redirect_uri is indeed the final place,
 		// Typically this circumvents the problem of the redirect_url being a dumb relay page.
 		page_uri: window.location.href
-	},
-
-	// Service
-	service: function(service) {
-
-		if (typeof (service) !== 'undefined') {
-			return this.utils.store('sync_service', service);
-		}
-
-		return this.utils.store('sync_service');
 	},
 
 	// Service configuration objects
@@ -160,6 +147,7 @@ hello.utils.extend(hello, {
 		// Create an object which inherits its parent as the prototype and constructs a new event chain.
 		var _this = this;
 		var utils = _this.utils;
+		var error = utils.error;
 		var promise = utils.Promise();
 
 		// Get parameters
@@ -405,15 +393,6 @@ hello.utils.extend(hello, {
 
 		return promise.proxy;
 
-		function error(code, message) {
-			return {
-				error: {
-					code: code,
-					message: message
-				}
-			};
-		}
-
 		function encodeFunction(s) {return s;}
 	},
 
@@ -424,6 +403,7 @@ hello.utils.extend(hello, {
 
 		var _this = this;
 		var utils = _this.utils;
+		var error = utils.error;
 
 		// Create a new promise
 		var promise = utils.Promise();
@@ -494,15 +474,6 @@ hello.utils.extend(hello, {
 		}
 
 		return promise.proxy;
-
-		function error(code, message) {
-			return {
-				error: {
-					code: code,
-					message: message
-				}
-			};
-		}
 	},
 
 	// Returns all the sessions that are subscribed too
@@ -525,6 +496,16 @@ hello.utils.extend(hello, {
 
 // Core utilities
 hello.utils.extend(hello.utils, {
+
+	// Error
+	error: function(code, message) {
+		return {
+			error: {
+				code: code,
+				message: message
+			}
+		};
+	},
 
 	// Append the querystring to a url
 	// @param string url
@@ -1270,7 +1251,7 @@ hello.utils.extend(hello.utils, {
 
 					hello.utils.responseHandler(_popup, window);
 
-					// Always close the popup reguardless of whether the hello.utils.responseHandler detects a state parameter or not in the querystring.
+					// Always close the popup regardless of whether the hello.utils.responseHandler detects a state parameter or not in the querystring.
 					// Such situations might arise such as those in #63
 
 					_popup.close();
@@ -1622,6 +1603,7 @@ hello.api = function() {
 	// Shorthand
 	var _this = this;
 	var utils = _this.utils;
+	var error = utils.error;
 
 	// Construct a new Promise object
 	var promise = utils.Promise();
@@ -1862,17 +1844,6 @@ hello.api = function() {
 			}
 		});
 	}
-
-	// Error handling
-	function error(code, message) {
-		return {
-			error:{
-				code:code,
-				message:message
-			}
-		};
-	}
-
 };
 
 // API utilities
@@ -1882,6 +1853,7 @@ hello.utils.extend(hello.utils, {
 	request: function(p, callback) {
 
 		var _this = this;
+		var error = _this.error;
 
 		// This has to go through a POST request
 		if (!_this.isEmpty(p.data) && !('FileList' in window) && _this.hasBinary(p.data)) {
@@ -1976,12 +1948,7 @@ hello.utils.extend(hello.utils, {
 		}
 
 		// None of the methods were successful throw an error
-		callback({
-			error:{
-				code: 'invalid_request',
-				message: 'There was no mechanism for handling this request'
-			}
-		});
+		callback(error('invalid_request', 'There was no mechanism for handling this request'));
 
 		return;
 
@@ -2087,6 +2054,7 @@ hello.utils.extend(hello.utils, {
 	xhr: function(method, url, headers, data, callback) {
 
 		var r = new XMLHttpRequest();
+		var error = this.error;
 
 		// Binary?
 		var binary = false;
@@ -2105,19 +2073,14 @@ hello.utils.extend(hello.utils, {
 			}
 			catch (_e) {
 				if (r.status === 401) {
-					json = {
-						error: {
-							code: 'access_denied',
-							message: r.statusText
-						}
-					};
+					json = error('access_denied', r.statusText);
 				}
 			}
 
 			var headers = headersToJSON(r.getAllResponseHeaders());
 			headers.statusCode = r.status;
 
-			callback(json || (method === 'GET' ? {error:{code: 'empty_response', message: 'Could not get resource'}} : {}), headers);
+			callback(json || (method === 'GET' ? error('empty_response', 'Could not get resource') : {}), headers);
 		};
 
 		r.onerror = function(e) {
@@ -2127,10 +2090,7 @@ hello.utils.extend(hello.utils, {
 			}
 			catch (_e) {}
 
-			callback(json || {error: {
-				code: 'access_denied',
-				message: 'Could not get resource'
-			}});
+			callback(json || error('access_denied', 'Could not get resource'));
 		};
 
 		var x;
@@ -2202,12 +2162,13 @@ hello.utils.extend(hello.utils, {
 	jsonp: function(url, callback, callbackID, timeout) {
 
 		var _this = this;
+		var error = _this.error;
 
 		// Change the name of the callback
 		var bool = 0;
 		var head = document.getElementsByTagName('head')[0];
 		var operaFix;
-		var result = {error: {message: 'server_error', code: 'server_error'}};
+		var result = error('server_error', 'server_error');
 		var cb = function() {
 			if (!(bool++)) {
 				window.setTimeout(function() {
@@ -2261,7 +2222,7 @@ hello.utils.extend(hello.utils, {
 		// Add timeout
 		if (timeout) {
 			window.setTimeout(function() {
-				result = {error: {message: 'timeout', code: 'timeout'}};
+				result = error('timeout', 'timeout');
 				cb();
 			}, timeout);
 		}
@@ -2285,6 +2246,7 @@ hello.utils.extend(hello.utils, {
 	post: function(url, data, options, callback, callbackID, timeout) {
 
 		var _this = this;
+		var error = _this.error;
 		var doc = document;
 
 		// This hack needs a form
@@ -2331,12 +2293,7 @@ hello.utils.extend(hello.utils, {
 
 		if (timeout) {
 			setTimeout(function() {
-				cb({
-					error: {
-						code: 'timeout',
-						message: 'The post operation timed out'
-					}
-				});
+				cb(error('timeout', 'The post operation timed out'));
 			}, timeout);
 		}
 
