@@ -14,6 +14,7 @@ gulp.task("default", function () {
     //'src/modules/foursquare.js',
     'src/modules/github.js',
     'src/modules/google.js',
+    'src/modules/jb-hub.js',
     //'src/modules/instagram.js',
     //'src/modules/linkedin.js',
     //'src/modules/soundcloud.js',
