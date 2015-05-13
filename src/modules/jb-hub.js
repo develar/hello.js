@@ -6,7 +6,7 @@
             oauth: {
                 version: 2,
                 auth: 'https://sso.jetbrains.com/api/rest/oauth2/auth',
-                grant: 'https://sso.jetbrains.com/api/rest/oauth2/auth'
+                grant: 'https://sso.jetbrains.com/api/rest/oauth2/token'
             },
 
             scope: {
@@ -17,6 +17,12 @@
 
             get: {
                 me: 'users/me'
+            },
+
+            login: function (p) {
+                if (p.qs.response_type === "code") {
+                    p.qs.access_type = "offline";
+                }
             },
 
             xhr: function (p) {
